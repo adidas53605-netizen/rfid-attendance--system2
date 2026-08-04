@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFID Attendance System</title>
+  <meta name="description" content="Premium RFID Attendance Management System">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-theme="dark">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">📡 RFID Attend</div>
+      <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <!-- Populated Dynamically based on User Role -->
+    </nav>
+    <div class="sidebar-footer">
+      <!-- Theme toggle switch -->
+      <div class="theme-toggle">
+        <i class="bi bi-sun"></i>
+        <label class="toggle-switch">
+          <input type="checkbox" id="themeToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <i class="bi bi-moon-stars"></i>
+      </div>
+      <!-- Logout button -->
+      <button class="btn-logout" id="btnLogout">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </button>
+      <!-- Connection status -->
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-dot"></span> Disconnected
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <header class="mobile-header" id="mobileHeader">
+    <button class="hamburger" id="hamburger">
+      <i class="bi bi-list"></i>
+    </button>
+    <span class="mobile-title">📡 RFID Attend</span>
+  </header>
+
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- LOGIN PAGE -->
+    <section class="page" id="page-login">
+      <!-- Centered login card -->
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-header">
+            <div class="login-icon">📡</div>
+            <h1>RFID Attendance</h1>
+            <p>Sign in to your account</p>
+          </div>
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" id="loginMobile" placeholder="e.g. 9876543210" required>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="loginPassword" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="btnLogin">
+              <span class="btn-text">Sign In</span>
+              <span class="btn-loader" style="display:none;"></span>
+            </button>
+          </form>
+          <div class="login-footer">
+            <small>Default: Admin (9876543210 / admin123)</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENT DASHBOARD PAGE -->
+    <section class="page" id="page-student-dashboard" style="display:none;">
+      <div class="page-header">
+        <h1>My Attendance Dashboard</h1>
+      </div>
+      
+      <div class="student-dashboard-grid">
+        <!-- Profile Card -->
+        <div class="card student-profile-card">
+          <div class="card-header">
+            <h2><i class="bi bi-person-circle"></i> My Profile</h2>
+          </div>
+          <div class="card-body">
+            <div class="student-profile-details">
+              <div class="student-profile-photo-container">
+                <div class="student-profile-photo-placeholder" id="studentProfilePhoto">U</div>
+              </div>
+              <h3 id="studentProfileName">Name</h3>
+              <span class="profile-dept-badge" id="studentProfileDept">Department</span>
+              <div class="profile-info-grid">
+                <div class="profile-field"><span class="field-label">Roll Number</span><span class="field-value" id="studentProfileRoll">-</span></div>
+                <div class="profile-field"><span class="field-label">Registration</span><span class="field-value" id="studentProfileReg">-</span></div>
+                <div class="profile-field"><span class="field-label">Semester</span><span class="field-value" id="studentProfileSem">-</span></div>
+                <div class="profile-field"><span class="field-label">Section</span><span class="field-value" id="studentProfileSection">-</span></div>
+                <div class="profile-field"><span class="field-label">Mobile</span><span class="field-value" id="studentProfileMobile">-</span></div>
+                <div class="profile-field"><span class="field-label">Email</span><span class="field-value" id="studentProfileEmail">-</span></div>
+                <div class="profile-field"><span class="field-label">RFID UID</span><span class="field-value" id="studentProfileRfid">-</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="card student-stats-card">
+          <div class="card-header">
+            <h2><i class="bi bi-graph-up"></i> Summary</h2>
+          </div>
+          <div class="card-body stats-flex">
+            <div class="progress-ring-container">
+              <svg class="progress-ring" width="160" height="160">
+                <circle class="progress-ring__circle-bg" stroke="var(--bg-tertiary)" stroke-width="12" fill="transparent" r="68" cx="80" cy="80" />
+                <circle class="progress-ring__circle" id="studentProgressRing" stroke="var(--success)" stroke-width="12" fill="transparent" r="68" cx="80" cy="80" />
+              </svg>
+              <div class="progress-ring-text"><span id="studentAttendancePercentage">0%</span></div>
+            </div>
+            <div class="stats-text-summary">
+              <div class="stat-summary-item">Total Scans: <strong id="studentTotalClasses">0</strong></div>
+              <div class="stat-summary-item">Classes Attended: <strong id="studentAttendedClasses">0</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Attendance History -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <h2><i class="bi bi-calendar-check"></i> My Attendance Logs</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" id="studentHistoryTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Device</th>
+              </tr>
+            </thead>
+            <tbody id="studentHistoryTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEACHER DASHBOARD PAGE -->
+    <section class="page" id="page-dashboard" style="display:none;">
+      <div class="page-header">
+        <h1>Teacher Dashboard</h1>
+        <div class="page-header-actions">
+          <span class="live-indicator"><span class="pulse-dot"></span> Live</span>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card stat-total">
+          <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTotalStudents">0</div>
+            <div class="stat-label">Total Students</div>
+          </div>
+        </div>
+        <div class="stat-card stat-present">
+          <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statPresentToday">0</div>
+            <div class="stat-label">Present Today</div>
+          </div>
+        </div>
+        <div class="stat-card stat-absent">
+          <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statAbsentToday">0</div>
+            <div class="stat-label">Absent Today</div>
+          </div>
+        </div>
+        <div class="stat-card stat-scans">
+          <div class="stat-icon"><i class="bi bi-broadcast"></i></div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTotalScans">0</div>
+            <div class="stat-label">Total Scans</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Grid: Live Feed + Charts -->
+      <div class="dashboard-grid">
+        <!-- Live Attendance Feed -->
+        <div class="card live-feed-card">
+          <div class="card-header">
+            <h2><i class="bi bi-broadcast"></i> Live Attendance Feed</h2>
+            <span class="feed-count" id="feedCount">0 scans today</span>
+          </div>
+          <div class="card-body">
+            <div class="attendance-feed" id="attendanceFeed">
+              <div class="feed-empty" id="feedEmpty">
+                <i class="bi bi-broadcast" style="font-size:3rem;opacity:0.3;"></i>
+                <p>Waiting for RFID scans...</p>
+                <small>Tap a card on the reader to begin</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Column -->
+        <div class="charts-column">
+          <div class="card chart-card">
+            <div class="card-header"><h2><i class="bi bi-pie-chart"></i> Attendance Overview</h2></div>
+            <div class="card-body chart-container">
+              <canvas id="attendanceDonut"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-header"><h2><i class="bi bi-bar-chart"></i> By Department</h2></div>
+            <div class="card-body chart-container">
+              <canvas id="departmentChart"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-header"><h2><i class="bi bi-clock"></i> Hourly Distribution</h2></div>
+            <div class="card-body chart-container">
+              <canvas id="hourlyChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Profile Popup (shown on scan) -->
+      <div class="profile-popup" id="profilePopup" style="display:none;">
+        <div class="profile-card">
+          <button class="profile-close" id="profileClose"><i class="bi bi-x-lg"></i></button>
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">AS</div>
+            <h2 id="profileName">Student Name</h2>
+            <span class="profile-dept-badge" id="profileDept">Department</span>
+          </div>
+          <div class="profile-body">
+            <div class="profile-field"><span class="field-label">Roll Number</span><span class="field-value" id="profileRoll">—</span></div>
+            <div class="profile-field"><span class="field-label">Registration</span><span class="field-value" id="profileReg">—</span></div>
+            <div class="profile-field"><span class="field-label">Semester</span><span class="field-value" id="profileSem">—</span></div>
+            <div class="profile-field"><span class="field-label">Section</span><span class="field-value" id="profileSection">—</span></div>
+            <div class="profile-field"><span class="field-label">Email</span><span class="field-value" id="profileEmail">—</span></div>
+            <div class="profile-field"><span class="field-label">Mobile</span><span class="field-value" id="profileMobile">—</span></div>
+            <div class="profile-field"><span class="field-label">Last Scan</span><span class="field-value" id="profileLastScan">—</span></div>
+          </div>
+          <div class="profile-status">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>Attendance Marked Successfully</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Status -->
+      <div class="card sync-status-card" id="syncStatusCard">
+        <div class="card-header">
+          <h2><i class="bi bi-cloud-arrow-up"></i> Google Sheets Sync</h2>
+          <button class="btn btn-sm btn-secondary" id="btnRetrySync">Retry Sync</button>
+        </div>
+        <div class="card-body">
+          <div class="sync-info">
+            <span>Pending sync: <strong id="syncPending">0</strong> records</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENTS PAGE -->
+    <section class="page" id="page-students" style="display:none;">
+      <div class="page-header">
+        <h1>Student Management</h1>
+        <button class="btn btn-primary" id="btnAddStudent">
+          <i class="bi bi-plus-lg"></i> Add Student
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <i class="bi bi-search"></i>
+        <input type="text" id="studentSearch" placeholder="Search by name, roll number, or RFID UID...">
+      </div>
+
+      <!-- Students Table -->
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table" id="studentsTable">
+            <thead>
+              <tr>
+                <th>RFID UID</th>
+                <th>Name</th>
+                <th>Roll Number</th>
+                <th>Department</th>
+                <th>Semester</th>
+                <th>Section</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span class="table-info" id="studentsTableInfo">Showing 0 students</span>
+          <div class="pagination" id="studentsPagination"></div>
+        </div>
+      </div>
+
+      <!-- Add/Edit Student Modal -->
+      <div class="modal-overlay" id="studentModal" style="display:none;">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <h2 id="studentModalTitle">Add Student</h2>
+            <button class="btn-close-modal" id="closeStudentModal"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <form id="studentForm">
+              <input type="hidden" id="studentFormId">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="formRfidUid">RFID UID *</label>
+                  <input type="text" id="formRfidUid" placeholder="e.g. A1B2C3D4" required>
+                </div>
+                <div class="form-group">
+                  <label for="formName">Full Name *</label>
+                  <input type="text" id="formName" placeholder="Student name" required>
+                </div>
+                <div class="form-group">
+                  <label for="formRoll">Roll Number *</label>
+                  <input type="text" id="formRoll" placeholder="e.g. CSE-2024-001" required>
+                </div>
+                <div class="form-group">
+                  <label for="formRegNo">Registration Number</label>
+                  <input type="text" id="formRegNo" placeholder="e.g. REG-20240001">
+                </div>
+                <div class="form-group">
+                  <label for="formDept">Department *</label>
+                  <select id="formDept" required>
+                    <option value="">Select Department</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Civil">Civil</option>
+                    <option value="Information Technology">Information Technology</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="formSemester">Semester</label>
+                  <select id="formSemester">
+                    <option value="">Select</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="formSection">Section</label>
+                  <input type="text" id="formSection" placeholder="e.g. A">
+                </div>
+                <div class="form-group">
+                  <label for="formMobile">Mobile Phone Number *</label>
+                  <input type="tel" id="formMobile" placeholder="e.g. 9876543220" required>
+                </div>
+                <div class="form-group">
+                  <label for="formEmail">Email</label>
+                  <input type="email" id="formEmail" placeholder="student@university.edu">
+                </div>
+                <div class="form-group">
+                  <label for="formAddress">Address</label>
+                  <input type="text" id="formAddress" placeholder="Full address">
+                </div>
+                <div class="form-group form-group-full">
+                  <label for="formPhotoUrl">Photo URL</label>
+                  <input type="url" id="formPhotoUrl" placeholder="https://example.com/photo.jpg">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelStudentForm">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitStudentForm">Save Student</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div class="modal-overlay" id="deleteModal" style="display:none;">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <h2>Confirm Delete</h2>
+            <button class="btn-close-modal" id="closeDeleteModal"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteStudentName"></strong>? This action cannot be undone.</p>
+            <div class="form-actions">
+              <button class="btn btn-secondary" id="cancelDelete">Cancel</button>
+              <button class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ATTENDANCE HISTORY PAGE -->
+    <section class="page" id="page-attendance" style="display:none;">
+      <div class="page-header">
+        <h1>Attendance History</h1>
+        <div class="page-header-actions">
+          <button class="btn btn-primary" id="btnManualMark">
+            <i class="bi bi-calendar-plus"></i> Mark Attendance
+          </button>
+          <button class="btn btn-secondary" id="btnExportCsv">
+            <i class="bi bi-filetype-csv"></i> Export CSV
+          </button>
+          <button class="btn btn-secondary" id="btnExportPdf">
+            <i class="bi bi-filetype-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>From</label>
+          <input type="date" id="filterFrom">
+        </div>
+        <div class="filter-group">
+          <label>To</label>
+          <input type="date" id="filterTo">
+        </div>
+        <div class="filter-group">
+          <label>Department</label>
+          <select id="filterDept">
+            <option value="">All Departments</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Civil">Civil</option>
+            <option value="Information Technology">IT</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Search</label>
+          <input type="text" id="filterSearch" placeholder="Student name or roll...">
+        </div>
+        <button class="btn btn-primary" id="btnApplyFilters">
+          <i class="bi bi-funnel"></i> Apply
+        </button>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table" id="attendanceTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Student Name</th>
+                <th>Roll Number</th>
+                <th>Department</th>
+                <th>Semester</th>
+                <th>Status</th>
+                <th>Device</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span class="table-info" id="attendanceTableInfo">Showing 0 records</span>
+          <div class="pagination" id="attendancePagination"></div>
+        </div>
+      </div>
+
+      <!-- Manual Attendance Modal -->
+      <div class="modal-overlay" id="manualMarkModal" style="display:none;">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <h2>Mark Manual Attendance</h2>
+            <button class="btn-close-modal" id="closeManualMarkModal"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <form id="manualMarkForm">
+              <div class="form-group">
+                <label for="manualStudentSelect">Student *</label>
+                <select id="manualStudentSelect" required>
+                  <option value="">Select Student</option>
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="manualDate">Date *</label>
+                <input type="date" id="manualDate" required>
+              </div>
+              <div class="form-group">
+                <label for="manualTime">Time *</label>
+                <input type="time" id="manualTime" required>
+              </div>
+              <div class="form-group">
+                <label for="manualStatus">Status *</label>
+                <select id="manualStatus" required>
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelManualMark">Cancel</button>
+                <button type="submit" class="btn btn-primary">Mark Attendance</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEACHERS PAGE (ADMIN ONLY) -->
+    <section class="page" id="page-teachers" style="display:none;">
+      <div class="page-header">
+        <h1>Teacher Accounts</h1>
+        <button class="btn btn-primary" id="btnAddTeacher">
+          <i class="bi bi-plus-lg"></i> Add Teacher
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table" id="teachersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Mobile Number</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="teachersTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Teacher Modal -->
+      <div class="modal-overlay" id="teacherModal" style="display:none;">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <h2>Add Teacher Account</h2>
+            <button class="btn-close-modal" id="closeTeacherModal"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <form id="teacherForm">
+              <div class="form-group">
+                <label for="formTeacherMobile">Mobile Number *</label>
+                <input type="text" id="formTeacherMobile" placeholder="e.g. 9876543211" required>
+              </div>
+              <div class="form-group">
+                <label for="formTeacherPassword">Password *</label>
+                <input type="password" id="formTeacherPassword" placeholder="Minimum 6 characters" required>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelTeacherForm">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Account</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUDIT LOGS PAGE (ADMIN ONLY) -->
+    <section class="page" id="page-audit" style="display:none;">
+      <div class="page-header">
+        <h1>System Audit Logs</h1>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table" id="auditLogsTable">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User (Mobile)</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts (order matters) -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/studentDashboard.js"></script>
+  <script src="/js/teachers.js"></script>
+  <script src="/js/audit.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/students.js"></script>
+  <script src="/js/attendance.js"></script>
+  <script src="/js/export.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
