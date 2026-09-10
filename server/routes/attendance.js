@@ -53,6 +53,53 @@ router.post('/scan', authenticateAPIKey, validateScanRequest, (req, res) => {
 });
 
 /**
+ * POST /verify-card - ESP32 Hardware Scan (unauthenticated, custom payload)
+ */
+router.post('/verify-card', (req, res) => {
+    const { studentUID, deviceID } = req.body;
+
+    if (!studentUID || !deviceID) {
+        return res.status(400).json({ error: 'Missing studentUID or deviceID' });
+    }
+
+    try {
+        const { student, attendance } = attendanceService.processRfidScan(studentUID, deviceID);
+
+        const record = {
+            date: attendance.date,
+            time: attendance.time,
+            student,
+            attendance
+        };
+
+        // Append to Google Sheets asynchronously
+        googleSheets.appendAttendance(record).catch(err => {
+            logger.error(`Error in Google Sheets append: ${err.message}`);
+        });
+
+        // Real-time update using Socket.IO
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('attendance:scan', record);
+            logger.info(`Real-time update pushed via Socket.IO for UID: ${studentUID}`);
+        } else {
+            logger.warn('Socket.IO instance not found in app configuration');
+        }
+
+        res.json({ status: 'MARKED', studentName: student.name });
+    } catch (error) {
+        if (error.message === 'STUDENT_NOT_FOUND') {
+            return res.status(404).json({ status: 'UNKNOWN_STUDENT', error: 'Student not found for the given RFID' });
+        }
+        if (error.message === 'DUPLICATE_SCAN') {
+            return res.status(409).json({ status: 'ALREADY_MARKED', error: 'Duplicate scan ignored' });
+        }
+        logger.error(`Verify card error: ${error.message}`);
+        res.status(500).json({ status: 'ERROR', error: 'Internal server error' });
+    }
+});
+
+/**
  * POST /manual - Manually mark attendance (Admin/Teacher only)
  */
 router.post('/manual', authenticateJWT, requireRole(['admin', 'teacher']), (req, res) => {

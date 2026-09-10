@@ -67,6 +67,14 @@ db.exec(`
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
   );
+
+  CREATE TABLE IF NOT EXISTS device_status (
+    device_id        TEXT PRIMARY KEY,
+    last_seen        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    firmware_version TEXT,
+    uptime           INTEGER,
+    free_heap        INTEGER
+  );
 `);
 
 // Create performance indexes separately

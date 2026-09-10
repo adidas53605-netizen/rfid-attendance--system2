@@ -17,6 +17,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
 const teachersRoutes = require('./routes/teachers');
 const auditRoutes = require('./routes/audit');
+const deviceRoutes = require('./routes/device');
 
 const app = express();
 const server = http.createServer(app);
@@ -47,11 +48,13 @@ app.use('/api/attendance/scan', scanLimiter);
 app.use('/api/rfid/scan', scanLimiter); // Apply same rate limit to the new scan endpoint
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/rfid', attendanceRoutes);
+app.use('/api/device', attendanceRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/teachers', teachersRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/device', deviceRoutes);
 
 // Socket.IO lifecycle logs
 io.on('connection', (socket) => {
